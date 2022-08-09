@@ -10,6 +10,7 @@ class FoodyItem(scrapy.Item):
 
     # general
     name = scrapy.Field()
+    ratings = scrapy.Field()
     shop_type = scrapy.Field()
     category = scrapy.Field()
     address = scrapy.Field()

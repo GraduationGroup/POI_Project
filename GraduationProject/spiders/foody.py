@@ -1,30 +1,12 @@
-from matplotlib import image
 import scrapy
 import json
 from .. items import FoodyItem
-
-# class FoodySpider(CrawlSpider):
-#     name = "foody"
-#     allowed_domains = ["foody.vn"]
-
-#     start_urls = ["https://www.foody.vn/ho-chi-minh/2-beo-banh-sau-rieng-shop-online"]
-
-#     def parse(self, response):
-#         foody_item = FoodyItem()
-#         data_resp = scrapy.Selector(response)
-
-#         foody_item['name'] = data_resp.xpath("div[@class='main-info-title']").extract_first()
-#         yield foody_item
-
 
 class FoodySpider(scrapy.Spider):
     name = "foody"
     # allowed_domains = ["foody.vn", "gappapi.deliverynow.vn"]
 
-    start_urls = ["https://www.foody.vn/ho-chi-minh/oc-co-lan","https://www.foody.vn/ho-chi-minh/nha-hang-viet-pho-le-quy-don","https://www.foody.vn/ho-chi-minh/sapinkie-an-vat-4-teen","https://www.foody.vn/ho-chi-minh/banh-canh-cua-nguyen-cong-tru"]
-
-    headers = {"Accept": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36 Edg/103.0.1264.62"}
+    start_urls = ["https://www.foody.vn/ho-chi-minh/com-tam-minh-long-nguyen-thi-thap","https://www.foody.vn/ho-chi-minh/oc-co-lan","https://www.foody.vn/ho-chi-minh/nha-hang-viet-pho-le-quy-don","https://www.foody.vn/ho-chi-minh/sapinkie-an-vat-4-teen","https://www.foody.vn/ho-chi-minh/banh-canh-cua-nguyen-cong-tru"]
 
 
     def parse(self, response):
@@ -32,38 +14,36 @@ class FoodySpider(scrapy.Spider):
 
         item = FoodyItem()
 
-        # General
+        # Name
         item['name'] = response_content.xpath("//div[@class='main-info-title']/h1/text()").extract_first()
-        item['shop_type'] = response_content.xpath("//div[@class='category-items']/a/text()").extract_first()
-        item['category'] = response_content.xpath("//div[@class='category-cuisines']/div[2]/a/text()").extract_first().strip()
-        item['open_time'] = response_content.xpath("//div[@class='micro-timesopen']/span[3]/text()").extract_first().strip()
-        temp = response_content.xpath("//span[@itemprop='priceRange']//span/text()").extract()
 
+        # Shop type
+        item['shop_type'] = response_content.xpath("//div[@class='category-items']/a/text()").extract_first()
+
+        # Category
+        item['category'] = response_content.xpath("//div[@class='category-cuisines']/div[2]/a/text()").extract_first().strip()
+
+        # Rating
+        citerias = response_content.xpath("//div[@class='microsite-top-points']/div[@class='label']/text()").extract()
+        points = response_content.xpath("//div[@class='microsite-top-points']/div[1]/span/text()").extract()
+        ratings = {}
+        for i in range(len(citerias)):
+            ratings[citerias[i]] = float(points[i]) 
+        item['ratings'] = ratings
+        ratings['Avg'] = float(response_content.xpath("//div[@class='microsite-point-avg ']/text()").extract_first().strip())
+
+        # Open time
+        item['open_time'] = response_content.xpath("//div[@class='micro-timesopen']/span[3]/text()").extract_first().strip()
+
+        # Price range
+        temp = response_content.xpath("//span[@itemprop='priceRange']//span/text()").extract()
         price_range = ''
         item['price_range'] = price_range.join(temp)
-
-        # # Crawl dynamic data
-        # deliveryMenuUrl = "https://www.foody.vn/__get/Notification/GetSummaryNew"
-        # url = "https://directory.ntschools.net/api/System/GetAllSchools"
-        # yield scrapy.Request(url=url, callback=self.parse_api, headers=self.headers)
-        # # item['menu'] = response_content.xpath("//a[@class='title-name-food']/div/text()").extract()
-        # # item['comments'] = response_content.xpath("//div[@class='lists list-reviews']/div/ul").extract()
-
-        # Gallery
-        # galleryUrl = "%s/album-anh" % response.url
 
         # Reviews
         reviewUrl = "%s/binh-luan" % response.url
         yield scrapy.Request(url=reviewUrl, callback=self.parse_review, meta={'arg': item})
-    
 
-    def parse_gallery(self, response):
-        response_content = scrapy.Selector(response)
-        item = response.meta.get('arg')
-
-        item['images'] = response_content.xpath("//div[@id='microGallery']//div/div//a/@href").extract()
-        yield item
-    
 
     def parse_review(self, response):
         response_content = scrapy.Selector(response)
@@ -85,46 +65,88 @@ class FoodySpider(scrapy.Spider):
             photos.append(t.xpath(".//img/@src").extract())
 
         for i in range(len(userUrls)):
-            item['reviews'].append({"user": userUrls[i], "createdAt": createdAts[i],"platform": platforms[i].strip(), "rating": ratings[i], "title": titles[i], "content": contents[i]})
+            item['reviews'].append({"user": userUrls[i], "createdAt": createdAts[i],"platform": platforms[i].strip(), "rating": float(ratings[i]), "title": titles[i], "content": contents[i]})
 
         suffix = "/binh-luan"
 
         galleryUrl = response.url.removesuffix(suffix) + "/album-anh"
         
-        yield scrapy.Request(url=galleryUrl, callback=self.parse_gallery, meta={'arg': item})
+        yield scrapy.Request(url=galleryUrl, callback=self.parse_photo, meta={'arg': item})
     
 
-    def parse_gallery(self, response):
+    def parse_photo(self, response):
         response_content = scrapy.Selector(response)
         item = response.meta.get('arg')
         item['photos'] = response_content.xpath("//div[@class='micro-home-album-img']/div[1]/a/@href").extract()
         yield item
 
-         
+
+    # DYNAMIC TEST
+    # headers = {
+    #     "Accept": "application/json",
+    #     "Accept-Encoding": "gzip, deflate, br",
+    #     "Accept-Language": "en-US,en;q=0.9",
+    #     "Referer": "https://directory.ntschools.net/",
+    #     "Sec-Fetch-Mode": "cors",
+    #     "Sec-Fetch-Site": "same-origin",
+    #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47",
+    #     "X-Requested-With": "Fetch"
+    # }
     
+    # def parse(self, response):
+    #     url = 'https://directory.ntschools.net/api/System/GetAllSchools'
+    #     request = scrapy.Request(url, callback= self.parse_api, headers= self.headers)
+
+    #     yield request
+    
+
     # def parse_api(self, response):
-    #     #item = FoodyItem()
+    #     base_url = 'https://directory.ntschools.net/api/System/GetSchool?itSchoolCode='
+    #     raw_data = response.body
+    #     data = json.loads(raw_data)
+        
+    #     for school in data:
+    #         code = school['itSchoolCode']
+    #         school_url = base_url + code
+    #         request = scrapy.Request(school_url, callback=self.parse_school, headers= self.headers)
 
-    #     #data = json.loads(response.body)
-    #     #print(data)
-    #     # menu = []
+    #         yield request
+    
 
-    #     # for dish in dishes:
-    #     #     temp ={}
-    #     #     temp['name'] = dish['name']
-    #     #     temp['price'] = dish['price']['value']
-    #     #     temp['photos'] = []
-
-    #     #     photos = dish['photos']
-    #     #     for p in photos:
-    #     #         temp.append(p['value'])
-
-    #     #     menu.append(temp)
-
-    #     # item['menu'] = dishes    
-
-    #     data = json.loads(response.body)
+    # def parse_school(self, response):
+    #     raw_data = response.body
+    #     data = json.loads(raw_data)
     #     yield {
-    #         'name': data[2]['schoolName']
+    #         'name': data['name']
     #     }
     
+
+    # DYNAMIC SHOPEE FOOD
+    # headers = {
+    #     # ":authority": "gappapi.deliverynow.vn",
+    #     # ":path": "/api/dish/get_delivery_dishes?id_type=2&request_id=9672",
+    #     # ":method": "GET",
+    #     # ":scheme": "https",
+    #     "accept": "application/json, text/plain, */*",
+    #     "accept-Encoding": "gzip, deflate, br",
+    #     "accept-Language": "en-US,en;q=0.9",
+    #     "origin": "https://shopeefood.vn",        
+    #     "referer": "https://shopeefood.vn/",
+    #     "sec-fetch-mode": "cors",
+    #     "sec-fetch-site": "cross-site",
+    #     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47",
+    #     # "X-Requested-With": "Fetch"
+    # }
+
+    # def parse(self, response):
+    #     url = 'https://gappapi.deliverynow.vn/api/dish/get_delivery_dishes?id_type=2&request_id=9672'
+    #     request = scrapy.Request(url, callback=self.parse_menu, headers=self.headers)
+
+    #     yield request
+    
+    
+    # def parse_menu(self, response):
+    #     raw_data = response.body
+    #     data = json.loads(raw_data)
+        
+    #     yield {'name': data}
