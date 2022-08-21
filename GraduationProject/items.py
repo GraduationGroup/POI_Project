@@ -10,24 +10,29 @@ class FoodyItem(scrapy.Item):
 
     # general
     name = scrapy.Field()
-    ratings = scrapy.Field()
-    shop_type = scrapy.Field()
-    category = scrapy.Field()
+
+    avgRating = scrapy.Field()
+    detailRating = scrapy.Field()
+    hasBooking = scrapy.Field()
+    hasDelivery = scrapy.Field()
+
     address = scrapy.Field()
+    district = scrapy.Field()
+    city = scrapy.Field()
+    phone = scrapy.Field()
+
     open_time = scrapy.Field()
     price_range = scrapy.Field()
 
-    # menu
-    menu = scrapy.Field()
+    totalReview = scrapy.Field()
+    totalView = scrapy.Field()
+    totalFavourite = scrapy.Field()
+    totalCheckins = scrapy.Field()
 
-    # review
+    categories = scrapy.Field()
+    reviewUrl = scrapy.Field()
+    albumUrl = scrapy.Field()
+
     reviews = scrapy.Field()
-
-    # gallery
     photos = scrapy.Field()
     # videos = scrapy.Field() 
-
-    # # rating
-    # detail_rating = scrapy.Field()
-    # avg_rating = scrapy.Field()
-    

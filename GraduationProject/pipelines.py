@@ -13,7 +13,6 @@ class MongoPipeline:
     def __init__(self, mongo_uri, mongo_db):
         self.mongo_uri = mongo_uri
         self.mongo_db = mongo_db
-        print(mongo_db)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -30,5 +29,5 @@ class MongoPipeline:
         self.client.close()
 
     def process_item(self, item, spider):
-        self.db.data.insert_one(ItemAdapter(item).asdict())
+        self.db['HCM_food_quan-an'].insert_one(ItemAdapter(item).asdict())
         return item
