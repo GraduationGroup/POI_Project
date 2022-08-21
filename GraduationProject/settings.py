@@ -90,3 +90,4 @@ FEED = 'json'
 FEED_EXPORT_ENCODING = 'utf-8'
 MONGO_URI = 'mongodb+srv://npvu1510:DRZc0qG8DQ848q4J@cluster0.cd4eojq.mongodb.net/?retryWrites=true&w=majority'
 MONGO_DATABASE = 'POI'
+DOWNLOAD_DELAY = 0.25

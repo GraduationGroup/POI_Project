@@ -1,10 +1,10 @@
-from time import sleep
+
 import scrapy
 import json
 from .. items import FoodyItem
 
-class FoodySpider(scrapy.Spider):
-    name = "foody"
+class Foody_HCM_Food_QuanAn(scrapy.Spider):
+    name = "foody1"
     suffix_url = "https://www.foody.vn"
 
     allowed_domains = ["foody.vn"]
@@ -30,10 +30,26 @@ class FoodySpider(scrapy.Spider):
 
         for i in range(1,5):
             request = scrapy.Request(base_url.format(str(i)), callback= self.parseShowMore, headers= self.headers)
-            sleep(0.25)
             yield request
 
-    def parseData1(self, data):
+    def parseShowMore(self, response):
+        raw_data = response.body
+        data = json.loads(raw_data)
+        
+        for d in data['searchItems']:
+            # CRAWL
+            scrapyItem = self.generateItem(d)
+            request = scrapy.Request(url = self.suffix_url + d['DetailUrl'], callback= self.parseDetail, headers= self.headers, meta={'item': scrapyItem})
+            yield request
+
+            if d['SubItems']:
+                for s in d['SubItems']:
+                    # CRAWL
+                    scrapyItem = self.generateItem(s)
+                    request = scrapy.Request(url = self.suffix_url + s['DetailUrl'], callback= self.parseDetail, headers= self.headers, meta={'item': scrapyItem})
+                    yield request
+
+    def generateItem(self, data):
         item = FoodyItem()
 
         item['name'] = data['Name']
@@ -61,23 +77,6 @@ class FoodySpider(scrapy.Spider):
         item['albumUrl'] = data['AlbumUrl']
 
         return item
-
-    def parseShowMore(self, response):
-        raw_data = response.body
-        data = json.loads(raw_data)
-        
-        for d in data['searchItems']:
-            # CRAWL
-            scrapyItem = self.parseData1(d)
-            request = scrapy.Request(url = self.suffix_url + d['DetailUrl'], callback= self.parseDetail, headers= self.headers, meta={'item': scrapyItem})
-            yield request
-
-            if d['SubItems']:
-                for s in d['SubItems']:
-                    # CRAWL
-                    scrapyItem = self.parseData1(s)
-                    request = scrapy.Request(url = self.suffix_url + s['DetailUrl'], callback= self.parseDetail, headers= self.headers, meta={'item': scrapyItem})
-                    yield request
 
     def parseDetail(self, response):
         response_content = scrapy.Selector(response)
