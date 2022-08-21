@@ -6,7 +6,7 @@ class FoodySpider(scrapy.Spider):
     name = "foody"
     # allowed_domains = ["foody.vn", "gappapi.deliverynow.vn"]
 
-    start_urls = ["https://www.foody.vn/ho-chi-minh/com-tam-minh-long-nguyen-thi-thap","https://www.foody.vn/ho-chi-minh/oc-co-lan","https://www.foody.vn/ho-chi-minh/nha-hang-viet-pho-le-quy-don","https://www.foody.vn/ho-chi-minh/sapinkie-an-vat-4-teen","https://www.foody.vn/ho-chi-minh/banh-canh-cua-nguyen-cong-tru"]
+    start_urls = ["https://www.foody.vn/ho-chi-minh/ichi-cake","https://www.foody.vn/ho-chi-minh/tra-sua-tien-huong","https://www.foody.vn/ho-chi-minh/thai-met-quan-bun-thai-tre-tron-ni-su-huynh-lien","https://www.foody.vn/ho-chi-minh/pho-suon-bo-nha-trang","https://www.foody.vn/ho-chi-minh/com-tam-minh-long-nguyen-thi-thap","https://www.foody.vn/ho-chi-minh/oc-co-lan","https://www.foody.vn/ho-chi-minh/nha-hang-viet-pho-le-quy-don","https://www.foody.vn/ho-chi-minh/sapinkie-an-vat-4-teen","https://www.foody.vn/ho-chi-minh/banh-canh-cua-nguyen-cong-tru"]
 
 
     def parse(self, response):
@@ -67,8 +67,8 @@ class FoodySpider(scrapy.Spider):
         for i in range(len(userUrls)):
             item['reviews'].append({"user": userUrls[i], "createdAt": createdAts[i],"platform": platforms[i].strip(), "rating": float(ratings[i]), "title": titles[i], "content": contents[i]})
 
+        # Photos
         suffix = "/binh-luan"
-
         galleryUrl = response.url.removesuffix(suffix) + "/album-anh"
         
         yield scrapy.Request(url=galleryUrl, callback=self.parse_photo, meta={'arg': item})
